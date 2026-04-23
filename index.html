@@ -3,79 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pachirisu Fix</title>
+    <title>Pachirisu Final</title>
     <style>
         body { margin: 0; background: #1a1a1a; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
-        canvas { position: absolute; top: 0; left: 0; }
-        #status { position: relative; z-index: 10; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #444; }
+        #status { position: absolute; z-index: 10; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #444; }
     </style>
 </head>
 <body>
 
-<div id="status">⏳ Loading Engines...</div>
+<div id="status">⚙️ Booting Engine...</div>
 
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
 <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0-beta.2/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0-beta.2/dist/cubism4.min.js"></script>
 
 <script>
     const statusDiv = document.getElementById('status');
 
-    async function init() {
-        // 1. Wait for everything to be ready
+    async function start() {
+        // Check if PIXI exists
         if (typeof PIXI === 'undefined') {
-            statusDiv.innerHTML = "❌ PixiJS failed. Check connection.";
+            statusDiv.innerHTML = "❌ PixiJS load failed.";
             return;
         }
 
-        statusDiv.innerHTML = "🔧 Checking Plugin...";
-        
-        // Sometimes the plugin takes a moment to register itself to PIXI
-        let attempts = 0;
-        while (!PIXI.live2d && attempts < 10) {
-            await new Promise(r => setTimeout(r, 500));
-            attempts++;
+        statusDiv.innerHTML = "🔧 Linking Live2D...";
+
+        // If the plugin didn't auto-attach, we check for it here
+        if (!PIXI.live2d) {
+            // Wait one more second for slow mobile CPUs
+            await new Promise(r => setTimeout(r, 1000));
         }
 
-        if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
-            statusDiv.innerHTML = "❌ Plugin Error.<br>Please use a different browser or refresh.";
+        if (!PIXI.live2d) {
+            statusDiv.innerHTML = "❌ Plugin still missing.<br>Try Google Chrome or Safari.";
             return;
         }
 
         try {
-            statusDiv.innerHTML = "📥 Loading Model...";
+            statusDiv.innerHTML = "🐾 Downloading Pachirisu...";
             
             const app = new PIXI.Application({
-                view: document.createElement('canvas'),
-                resizeTo: window,
+                width: window.innerWidth,
+                height: window.innerHeight,
                 backgroundAlpha: 0,
-                antialias: true
+                antialias: true,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true
             });
             document.body.appendChild(app.view);
 
-            // Use the direct URL to be 100% sure it finds the file
-            const modelUrl = "pachirisu.model3.json";
-            const model = await PIXI.live2d.Live2DModel.from(modelUrl);
+            // Load the model from the root
+            const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
 
             app.stage.addChild(model);
 
-            // Positioning
+            // Positioning & Scaling
             const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.8;
             model.scale.set(scale);
             model.anchor.set(0.5, 0.5);
             model.x = window.innerWidth / 2;
             model.y = window.innerHeight / 2;
 
-            statusDiv.style.display = "none";
+            statusDiv.style.display = "none"; // Hide status on success
 
         } catch (e) {
             statusDiv.innerHTML = "❌ <b>File Error:</b><br>" + e.message;
-            console.error(e);
         }
     }
 
-    // Delay start slightly to let the browser breathe
-    window.onload = () => setTimeout(init, 1000);
+    // Start only when window is fully ready
+    window.onload = start;
 </script>
 
 </body>
