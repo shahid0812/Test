@@ -1,74 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Live2D Final Fix</title>
-  <style>
-    body { margin: 0; background-color: #1a1a1a; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #eee; font-family: sans-serif; }
-    canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
-    #status { position: absolute; z-index: 10; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 12px; text-align: center; max-width: 80%; border: 1px solid #444; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pachirisu Live2D</title>
+    <style>
+        body { margin: 0; background-color: #1a1a1a; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #eee; font-family: sans-serif; }
+        canvas { display: block; position: absolute; top: 0; left: 0; }
+        #log { position: absolute; z-index: 10; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px; text-align: center; font-size: 14px; max-width: 80%; border: 1px solid #444; }
+    </style>
 </head>
 <body>
 
-<div id="status">🚀 Initializing...</div>
+<div id="log">⏳ Loading Engine...</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.12/pixi.min.js"></script>
 
 <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0-beta.2/dist/cubism4.min.js"></script>
 
 <script>
-  const statusDiv = document.getElementById('status');
+    const log = document.getElementById('log');
+    
+    async function start() {
+        try {
+            // Safety Check: Wait for libraries to be ready
+            if (typeof PIXI === 'undefined' || !PIXI.live2d) {
+                log.innerHTML = "🔧 Connecting Plugin... (Wait 2s)";
+                await new Promise(res => setTimeout(res, 2000));
+            }
 
-  async function init() {
-    // Safety check: Is the plugin loaded?
-    if (!PIXI.live2d) {
-      statusDiv.innerHTML = "<b style='color:red;'>Plugin Error:</b><br>The Live2D library didn't load. Please check your internet and refresh.";
-      return;
+            if (!PIXI.live2d) {
+                throw new Error("Plugin failed to attach to PIXI. Try refreshing.");
+            }
+
+            log.innerHTML = "📥 Fetching Pachirisu...";
+
+            const app = new PIXI.Application({
+                view: document.createElement('canvas'),
+                resizeTo: window,
+                transparent: true,
+                antialias: true
+            });
+            document.body.appendChild(app.view);
+
+            // Using the filename exactly as it is on your GitHub
+            const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
+
+            app.stage.addChild(model);
+
+            // Positioning
+            const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.8;
+            model.scale.set(scale);
+            model.anchor.set(0.5, 0.5);
+            model.x = window.innerWidth / 2;
+            model.y = window.innerHeight / 2;
+
+            log.style.display = "none"; // Success!
+
+        } catch (e) {
+            log.innerHTML = `<b style="color:#ff6b6b">Error:</b><br>${e.message}`;
+            console.error(e);
+        }
     }
 
-    try {
-      const app = new PIXI.Application({
-        view: document.createElement('canvas'),
-        resizeTo: window,
-        backgroundAlpha: 0,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      });
-      document.body.appendChild(app.view);
-
-      statusDiv.innerHTML = "Downloading model...";
-      
-      // Load the model
-      const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
-
-      app.stage.addChild(model);
-      
-      // Scaling and Positioning
-      const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.85;
-      model.scale.set(scale);
-      model.anchor.set(0.5, 0.5);
-      model.x = window.innerWidth / 2;
-      model.y = window.innerHeight / 2;
-
-      statusDiv.style.display = "none"; 
-
-      window.onresize = () => {
-        app.renderer.resize(window.innerWidth, window.innerHeight);
-        model.x = window.innerWidth / 2;
-        model.y = window.innerHeight / 2;
-      };
-
-    } catch (err) {
-      statusDiv.innerHTML = `<b style="color:red;">File Error:</b><br>${err.message}`;
-    }
-  }
-
-  // Start
-  init();
+    // Start after the page fully loads
+    window.onload = start;
 </script>
+
 </body>
 </html>
