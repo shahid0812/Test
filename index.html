@@ -2,22 +2,35 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live2D Android Fix</title>
   <style>
-    body { margin: 0; background: #111; overflow: hidden; }
+    /* Ensure the background is dark and the canvas fills the screen */
+    body { 
+      margin: 0; 
+      background: #111; 
+      overflow: hidden; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+    }
   </style>
 </head>
 <body>
 
-<!-- 1. Load PixiJS -->
-<script src="https://jsdelivr.net"></script>
-<!-- 2. Load Cubism 4 SDK (REALLY IMPORTANT) -->
-<script src="https://live2d.com"></script>
-<!-- 3. Load Pixi-Live2D-Display -->
-<script src="https://jsdelivr.net"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
+
+<script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 
 <script>
   (async function() {
+    // Initialize the PixiJS Application
     const app = new PIXI.Application({
       view: document.createElement('canvas'),
       resizeTo: window,
@@ -27,19 +40,25 @@
     document.body.appendChild(app.view);
 
     try {
-      // Use the simplified name we set in the JSON earlier
+      // Load the model. Ensure the filename matches exactly (case-sensitive on GitHub)
       const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
 
       app.stage.addChild(model);
 
-      // Auto-scaling to fit your screen
+      // Scaling logic: Fit the model to the screen size
       const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.9;
       model.scale.set(scale);
+      
+      // Center the model
       model.anchor.set(0.5, 0.5);
       model.position.set(window.innerWidth / 2, window.innerHeight / 2);
 
+      // Log success for debugging on Android
+      console.log("Model loaded successfully!");
+
     } catch (e) {
-      console.error("Error:", e);
+      // This will show you exactly what failed in the mobile console
+      console.error("Failed to load model:", e);
     }
   })();
 </script>
