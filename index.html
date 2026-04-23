@@ -8,7 +8,6 @@
     body { margin: 0; background-color: #1a1a1a; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #eee; font-family: sans-serif; }
     canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
     #status { position: absolute; z-index: 10; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 12px; text-align: center; max-width: 80%; border: 1px solid #444; }
-    .error { color: #ff6b6b; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -16,42 +15,47 @@
 <div id="status">🚀 Initializing...</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
+
 <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
 
 <script>
   const statusDiv = document.getElementById('status');
 
   async function init() {
+    // Safety check: Is the plugin loaded?
+    if (!PIXI.live2d) {
+      statusDiv.innerHTML = "<b style='color:red;'>Plugin Error:</b><br>The Live2D library didn't load. Please check your internet and refresh.";
+      return;
+    }
+
     try {
-      // 1. Setup Pixi
       const app = new PIXI.Application({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        view: document.createElement('canvas'),
+        resizeTo: window,
         backgroundAlpha: 0,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       });
       document.body.appendChild(app.view);
 
-      // 2. Identify the correct file path (Auto-detecting root)
-      const modelFile = "pachirisu.model3.json";
-      statusDiv.innerHTML = `Searching for <b>${modelFile}</b>...`;
+      statusDiv.innerHTML = "Downloading model...";
+      
+      // Load the model
+      const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
 
-      // 3. Load the model
-      const model = await PIXI.live2d.Live2DModel.from(modelFile);
-
-      // 4. Success! Setup the visual
       app.stage.addChild(model);
+      
+      // Scaling and Positioning
       const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.85;
       model.scale.set(scale);
       model.anchor.set(0.5, 0.5);
       model.x = window.innerWidth / 2;
       model.y = window.innerHeight / 2;
 
-      statusDiv.style.display = "none"; // Hide status when working
+      statusDiv.style.display = "none"; 
 
-      // Responsive resize
       window.onresize = () => {
         app.renderer.resize(window.innerWidth, window.innerHeight);
         model.x = window.innerWidth / 2;
@@ -59,17 +63,11 @@
       };
 
     } catch (err) {
-      statusDiv.innerHTML = `
-        <div class="error">LOAD ERROR</div>
-        <p style="font-size: 13px;">${err.message}</p>
-        <hr style="border:0; border-top:1px solid #444;">
-        <p style="font-size: 11px; color: #888;">
-          Note: If you just uploaded files, wait 1 minute and use <b>Incognito Mode</b> to bypass the cache.
-        </p>
-      `;
+      statusDiv.innerHTML = `<b style="color:red;">File Error:</b><br>${err.message}`;
     }
   }
 
+  // Start
   init();
 </script>
 </body>
