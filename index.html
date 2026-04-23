@@ -1,77 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pachirisu Final</title>
-    <style>
-        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
-        #status { background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid #444; text-align: center; z-index: 100; }
-        canvas { position: absolute; top: 0; left: 0; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pachirisu</title>
+    <style>body { margin: 0; background: #111; }</style>
 </head>
 <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
+    <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0-beta.2/dist/cubism4.min.js"></script>
 
-<div id="status">📡 Connecting to Live2D Engine...</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
-<script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
-
-<script>
-    const status = document.getElementById('status');
-
-    // Manually loading the plugin to bypass browser "lazy-loading"
-    function loadPlugin(url) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = url;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    async function start() {
-        try {
-            status.innerHTML = "🔗 Linking Plugin...";
-            // Force load the specific Cubism 4 bundle
-            await loadPlugin("https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0-beta.2/dist/cubism4.min.js");
-
-            // Final check before running
-            if (!window.PIXI || !PIXI.live2d || !PIXI.live2d.Live2DModel) {
-                throw new Error("Plugin failed to initialize on this browser.");
+    <script>
+        window.onload = async () => {
+            // Check if the bridge actually exists
+            if (!window.PIXI || !PIXI.live2d) {
+                document.body.innerHTML = "<div style='color:white;padding:20px;'>Browser blocked the plugin. Try Incognito mode or disable 'Data Saver'.</div>";
+                return;
             }
-
-            status.innerHTML = "🎾 Loading Pachirisu...";
 
             const app = new PIXI.Application({
                 width: window.innerWidth,
                 height: window.innerHeight,
-                backgroundAlpha: 0,
-                antialias: true
+                backgroundAlpha: 0
             });
             document.body.appendChild(app.view);
 
-            // Load the model
-            const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
-            app.stage.addChild(model);
-
-            // Center and scale
-            const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.8;
-            model.scale.set(scale);
-            model.anchor.set(0.5, 0.5);
-            model.x = window.innerWidth / 2;
-            model.y = window.innerHeight / 2;
-
-            status.style.display = "none";
-
-        } catch (err) {
-            status.innerHTML = "❌ <b>Final Error:</b><br>" + err.message + 
-                               "<br><br><small>Try clearing browser cache or using a different Wi-Fi/Data connection.</small>";
-        }
-    }
-
-    window.onload = start;
-</script>
+            try {
+                const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
+                app.stage.addChild(model);
+                
+                // Position and Scale
+                const s = Math.min(window.innerWidth/model.width, window.innerHeight/model.height) * 0.8;
+                model.scale.set(s);
+                model.anchor.set(0.5);
+                model.position.set(window.innerWidth/2, window.innerHeight/2);
+            } catch (e) {
+                alert("File missing: " + e.message);
+            }
+        };
+    </script>
 </body>
 </html>
