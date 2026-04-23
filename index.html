@@ -1,66 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live2D Android Fix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Live2D Mobile Viewer</title>
   <style>
-    /* Ensure the background is dark and the canvas fills the screen */
     body { 
       margin: 0; 
-      background: #111; 
+      padding: 0; 
+      background-color: #222; 
       overflow: hidden; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
-      height: 100vh;
+      height: 100vh; 
+      color: white; 
+      font-family: sans-serif; 
     }
-    canvas {
-      display: block;
+    canvas { 
+      display: block; 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      z-index: 1; 
+    }
+    #status { 
+      position: absolute; 
+      z-index: 10; 
+      background: rgba(0,0,0,0.8); 
+      padding: 15px 25px; 
+      border-radius: 8px; 
+      text-align: center; 
+      max-width: 85%; 
+      word-wrap: break-word;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
+<div id="status">Starting up...</div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
 <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 
 <script>
-  (async function() {
-    // Initialize the PixiJS Application
-    const app = new PIXI.Application({
-      view: document.createElement('canvas'),
-      resizeTo: window,
-      backgroundAlpha: 0,
-      antialias: true
-    });
-    document.body.appendChild(app.view);
+  const statusDiv = document.getElementById('status');
 
+  async function loadMyModel() {
     try {
-      // Load the model. Ensure the filename matches exactly (case-sensitive on GitHub)
+      statusDiv.innerText = "Step 1: Setting up canvas...";
+      
+      // Setup Pixi App
+      const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundAlpha: 0,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      });
+      document.body.appendChild(app.view);
+
+      statusDiv.innerText = "Step 2: Downloading model files (this may take a moment)...";
+
+      // Load the Model
       const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
 
+      statusDiv.innerText = "Step 3: Rendering model...";
+
+      // Add model to stage
       app.stage.addChild(model);
 
-      // Scaling logic: Fit the model to the screen size
-      const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.9;
-      model.scale.set(scale);
-      
+      // Calculate scale to fit screen nicely
+      const scaleX = window.innerWidth / model.width;
+      const scaleY = window.innerHeight / model.height;
+      model.scale.set(Math.min(scaleX, scaleY) * 0.8); // 80% of screen size
+
       // Center the model
       model.anchor.set(0.5, 0.5);
-      model.position.set(window.innerWidth / 2, window.innerHeight / 2);
+      model.x = window.innerWidth / 2;
+      model.y = window.innerHeight / 2;
 
-      // Log success for debugging on Android
-      console.log("Model loaded successfully!");
+      // Hide status text on success
+      statusDiv.style.display = "none";
 
-    } catch (e) {
-      // This will show you exactly what failed in the mobile console
-      console.error("Failed to load model:", e);
+      // Handle phone rotation or resizing
+      window.addEventListener('resize', () => {
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+        model.x = window.innerWidth / 2;
+        model.y = window.innerHeight / 2;
+      });
+
+    } catch (error) {
+      // If ANYTHING goes wrong, print it to the screen in red
+      statusDiv.style.color = "#ff5555";
+      statusDiv.innerHTML = "<b>Error loading model:</b><br><br>" + error.message + "<br><br><small>Double-check your GitHub file names. They are case-sensitive!</small>";
     }
-  })();
+  }
+
+  // Run the code
+  loadMyModel();
 </script>
 
 </body>
