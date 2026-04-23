@@ -3,43 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Live2D Mobile Viewer</title>
+  <title>Live2D Final Fix</title>
   <style>
-    body { 
-      margin: 0; 
-      padding: 0; 
-      background-color: #222; 
-      overflow: hidden; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      height: 100vh; 
-      color: white; 
-      font-family: sans-serif; 
-    }
-    canvas { 
-      display: block; 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      z-index: 1; 
-    }
-    #status { 
-      position: absolute; 
-      z-index: 10; 
-      background: rgba(0,0,0,0.8); 
-      padding: 15px 25px; 
-      border-radius: 8px; 
-      text-align: center; 
-      max-width: 85%; 
-      word-wrap: break-word;
-      line-height: 1.5;
-    }
+    body { margin: 0; background-color: #1a1a1a; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; color: #eee; font-family: sans-serif; }
+    canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+    #status { position: absolute; z-index: 10; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 12px; text-align: center; max-width: 80%; border: 1px solid #444; }
+    .error { color: #ff6b6b; font-weight: bold; }
   </style>
 </head>
 <body>
 
-<div id="status">Starting up...</div>
+<div id="status">🚀 Initializing...</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.10/browser/pixi.min.js"></script>
 <script src="https://cubism.live2d.com/sdk-web/bin/cubismcore.min.js"></script>
@@ -48,11 +22,9 @@
 <script>
   const statusDiv = document.getElementById('status');
 
-  async function loadMyModel() {
+  async function init() {
     try {
-      statusDiv.innerText = "Step 1: Setting up canvas...";
-      
-      // Setup Pixi App
+      // 1. Setup Pixi
       const app = new PIXI.Application({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -62,46 +34,43 @@
       });
       document.body.appendChild(app.view);
 
-      statusDiv.innerText = "Step 2: Downloading model files (this may take a moment)...";
+      // 2. Identify the correct file path (Auto-detecting root)
+      const modelFile = "pachirisu.model3.json";
+      statusDiv.innerHTML = `Searching for <b>${modelFile}</b>...`;
 
-      // Load the Model
-      const model = await PIXI.live2d.Live2DModel.from("pachirisu.model3.json");
+      // 3. Load the model
+      const model = await PIXI.live2d.Live2DModel.from(modelFile);
 
-      statusDiv.innerText = "Step 3: Rendering model...";
-
-      // Add model to stage
+      // 4. Success! Setup the visual
       app.stage.addChild(model);
-
-      // Calculate scale to fit screen nicely
-      const scaleX = window.innerWidth / model.width;
-      const scaleY = window.innerHeight / model.height;
-      model.scale.set(Math.min(scaleX, scaleY) * 0.8); // 80% of screen size
-
-      // Center the model
+      const scale = Math.min(window.innerWidth / model.width, window.innerHeight / model.height) * 0.85;
+      model.scale.set(scale);
       model.anchor.set(0.5, 0.5);
       model.x = window.innerWidth / 2;
       model.y = window.innerHeight / 2;
 
-      // Hide status text on success
-      statusDiv.style.display = "none";
+      statusDiv.style.display = "none"; // Hide status when working
 
-      // Handle phone rotation or resizing
-      window.addEventListener('resize', () => {
+      // Responsive resize
+      window.onresize = () => {
         app.renderer.resize(window.innerWidth, window.innerHeight);
         model.x = window.innerWidth / 2;
         model.y = window.innerHeight / 2;
-      });
+      };
 
-    } catch (error) {
-      // If ANYTHING goes wrong, print it to the screen in red
-      statusDiv.style.color = "#ff5555";
-      statusDiv.innerHTML = "<b>Error loading model:</b><br><br>" + error.message + "<br><br><small>Double-check your GitHub file names. They are case-sensitive!</small>";
+    } catch (err) {
+      statusDiv.innerHTML = `
+        <div class="error">LOAD ERROR</div>
+        <p style="font-size: 13px;">${err.message}</p>
+        <hr style="border:0; border-top:1px solid #444;">
+        <p style="font-size: 11px; color: #888;">
+          Note: If you just uploaded files, wait 1 minute and use <b>Incognito Mode</b> to bypass the cache.
+        </p>
+      `;
     }
   }
 
-  // Run the code
-  loadMyModel();
+  init();
 </script>
-
 </body>
 </html>
